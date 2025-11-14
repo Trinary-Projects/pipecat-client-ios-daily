@@ -387,4 +387,12 @@ extension DailyTransport: CallClientDelegate {
         }
     }
 
+    public func callClient(_ callClient: CallClient, networkStatsUpdated newStats: NetworkStats) {
+        self.delegate?.onNetworkStatsUpdated(networkStats: newStats.toRtvi())
+    }
+
+    public func callClient(_ callClient: CallClient, networkConnectionStatusUpdated status: NetworkConnectionStatusUpdate) {
+        self.delegate?.onNetworkConnectionStatusUpdated(networkConnectionStatusUpdate: status.toRtvi())
+    }
+
 }

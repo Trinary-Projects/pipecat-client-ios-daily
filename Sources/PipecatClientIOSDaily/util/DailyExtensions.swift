@@ -104,3 +104,110 @@ extension ClientSettingsUpdate {
         )
     }
 }
+
+extension Daily.NetworkStats {
+    func toRtvi() -> PipecatClientIOS.RTVINetworkStats {
+        return RTVINetworkStats(
+            quality: self.quality,
+            threshold: {
+                switch self.threshold {
+                case .good:
+                    return .Good
+                case .low:
+                    return .Low
+                case .veryLow:
+                    return .VeryLow
+                default:
+                    return .Good
+                }
+            }(),
+            previousThreshold: {
+                guard let prevThreshold = self.previousThreshold else {
+                    return nil
+                }
+                switch prevThreshold {
+                case .good:
+                    return .Good
+                case .low:
+                    return .Low
+                case .veryLow:
+                    return .VeryLow
+                default:
+                    return .Good
+                }
+            }(),
+            stats: self.stats.toRtvi()
+        )
+    }
+}
+
+extension Daily.DetailedNetworkStats {
+    func toRtvi() -> PipecatClientIOS.RTVIDetailedNetworkStats {
+        return RTVIDetailedNetworkStats(
+            latest: self.latest.toRtvi(),
+            worstVideoReceivePacketLoss: self.worstVideoReceivePacketLoss,
+            worstVideoSendPacketLoss: self.worstVideoSendPacketLoss
+        )
+    }
+}
+
+extension Daily.LatestStatistics {
+    func toRtvi() -> PipecatClientIOS.RTVILatestStatistics {
+        return RTVILatestStatistics(
+            receiveBitsPerSecond: self.receiveBitsPerSecond,
+            sendBitsPerSecond: self.sendBitsPerSecond,
+            timestamp: self.timestamp,
+            videoRecvBitsPerSecond: self.videoRecvBitsPerSecond,
+            videoSendBitsPerSecond: self.videoSendBitsPerSecond,
+            videoRecvPacketLoss: self.videoRecvPacketLoss,
+            videoSendPacketLoss: self.videoSendPacketLoss,
+            totalRecvPacketLoss: self.totalRecvPacketLoss,
+            totalSendPacketLoss: self.totalSendPacketLoss
+        )
+    }
+}
+
+extension Daily.NetworkConnectionStatusUpdate {
+    func toRtvi() -> PipecatClientIOS.RTVINetworkConnectionStatusUpdate {
+        // NetworkConnectionStatusUpdate is Codable, so we decode it to extract the values
+        guard let jsonData = try? JSONEncoder().encode(self),
+              let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
+              let connectionString = json["connection"] as? String,
+              let eventString = json["event"] as? String else {
+            // Fallback: return default values if decoding fails
+            return RTVINetworkConnectionStatusUpdate(
+                connection: .signalling,
+                event: .connected
+            )
+        }
+        
+        let connection: PipecatClientIOS.RTVINetworkConnectionType = {
+            switch connectionString {
+            case "signalling":
+                return .signalling
+            case "recvTransport":
+                return .recvTransport
+            case "sendTransport":
+                return .sendTransport
+            default:
+                return .signalling
+            }
+        }()
+        
+        let event: PipecatClientIOS.RTVINetworkConnectionEventType = {
+            switch eventString {
+            case "connected":
+                return .connected
+            case "interrupted":
+                return .interrupted
+            default:
+                return .connected
+            }
+        }()
+        
+        return RTVINetworkConnectionStatusUpdate(
+            connection: connection,
+            event: event
+        )
+    }
+}
